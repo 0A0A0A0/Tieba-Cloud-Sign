@@ -89,12 +89,12 @@ switch (SYSTEM_PAGE) {
         break;
 
     case 'admin:update':
-        $c = new wcurl('https://api.github.com/repos/moenetwork/tieba-cloud-sign/commits?per_page=1', ['User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36']);
+        $c = new wcurl('https://api.github.com/repos/0A0A0A0/tieba-cloud-sign/commits?per_page=1', ['User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36']);
         $data = json_decode($c->exec(), true);
         if (!isset($data[0]["sha"])) {
             die('<div class="alert alert-danger"><b>检查更新失败：无法获取最新版本信息。</b></div>');
         }
-        $c = new wcurl('https://api.github.com/repos/moenetwork/tieba-cloud-sign/commits/' . $data[0]["sha"], ['User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36']);
+        $c = new wcurl('https://api.github.com/repos/0A0A0A0/tieba-cloud-sign/commits/' . $data[0]["sha"], ['User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36']);
         $data = json_decode($c->exec(), true);
         if (empty($data)) {
             die('<div class="alert alert-danger"><b>检查更新失败：无法获取最新版本信息。</b></div>');
@@ -103,7 +103,7 @@ switch (SYSTEM_PAGE) {
             if (isset($_GET['ok'])) {
                 $tip .= '<b>更新成功，下面是最新版本信息。</b><hr/>';
             }
-            $tip .= '<div class="text-right"> <div class="label label-primary">commit</div> <a href="https://github.com/MoeNetwork/Tieba-Cloud-Sign/commit/' . $data["sha"] . '" target="_blank" class="label label-info">' . substr($data["sha"], 0, 7) . '</a> <div class="label label-warning"><span class="glyphicon glyphicon-time" aria-hidden="true"></span> ' . $data["commit"]["committer"]["date"] . '</div> <div class="label label-' . ($data["commit"]["verification"]["verified"] ? 'success' : 'warning') . '">' . ($data["commit"]["verification"]["verified"] ? 'Verified' : 'Not verified') . '</div></div><br /><div>' . nl2br($data["commit"]["message"]) . '</div>';
+            $tip .= '<div class="text-right"> <div class="label label-primary">commit</div> <a href="https://github.com/0A0A0A0/Tieba-Cloud-Sign/commit/' . $data["sha"] . '" target="_blank" class="label label-info">' . substr($data["sha"], 0, 7) . '</a> <div class="label label-warning"><span class="glyphicon glyphicon-time" aria-hidden="true"></span> ' . $data["commit"]["committer"]["date"] . '</div> <div class="label label-' . ($data["commit"]["verification"]["verified"] ? 'success' : 'warning') . '">' . ($data["commit"]["verification"]["verified"] ? 'Verified' : 'Not verified') . '</div></div><br /><div>' . nl2br($data["commit"]["message"]) . '</div>';
             //check update scripts
             foreach ($data["files"] as $file_info) {
                 if ($file_info["status"] === "added" && strpos($file_info["filename"], 'setup/update') !== false) {
@@ -126,7 +126,7 @@ switch (SYSTEM_PAGE) {
         //  //CODING仓库都没了
         //  default:
         if ($commit_mode) {
-            $c = new wcurl("https://github.com/MoeNetwork/Tieba-Cloud-Sign/archive/{$_GET["commit"]}.zip");
+            $c = new wcurl("https://github.com/0A0A0A0/Tieba-Cloud-Sign/archive/{$_GET["commit"]}.zip");
         } else {
             $c = new wcurl(UPDATE_SERVER_GITHUB);
         }

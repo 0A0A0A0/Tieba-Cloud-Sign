@@ -169,12 +169,12 @@ class misc
      * 对输入的数组添加客户端验证代码（tiebaclient!!!）
      * @param array $data 数组
      */
-    public static function addTiebaSign(&$data, $withClientType = true)
+    public static function addTiebaSign(&$data)
     {
-        $data["_client_version"] = "12.22.1.0";
-        if ($withClientType) {
-            $data["_client_type"] = "4";
-        }
+        $data = array_merge($data, array(
+            '_client_type' => '2',
+            '_client_version' => '12.12.1.0'
+        ));
         ksort($data);
         $x = '';
         foreach ($data as $k => $v) {
@@ -204,7 +204,7 @@ class misc
     public static function DoSign_Onekey($uid, $kw, $id, $pid, $fid, $ck)
     {
         $ch = new wcurl('http://c.tieba.baidu.com/c/c/forum/msign', array(
-            'User-Agent: bdtb for Android 6.5.8'
+            'User-Agent: bdtb for Android 12.29.7.0'
         ));
         $ch->addcookie(array('BDUSS' => $ck));
         $temp = array(
@@ -489,58 +489,39 @@ class misc
     }
 
     /*
-     * 获取指定pid用户userid
+     * 通过用户名获取user_id和portrait
      */
-    // out to date
-    public static function getUserid($pid)
+    public static function searchFriend($un)
     {
-
-        global $m;
-        $ub  = $m->once_fetch_array("SELECT portrait FROM `" . DB_PREFIX . "baiduid` WHERE `id` = '{$pid}';");
-        return self::getUseridByPortrait($ub['portrait']);
-    }
-    /*
-     * 获取指定portrait的userid
-     */
-    // out to date
-    public static function getUseridByPortrait($portrait)
-    {
-
-        $ur = getUserInfo($portrait, false);
-        $userid = (isset($ur["no"]) && $ur["no"] === 0) ? $ur['data']['id'] : 0;
-        return $userid;
-    }
-    /*
-    * uid转旧版portrait
-     */
-    public static function uid2LegacyPortrait($uid)
-    {
-
-        //貌似对uid较大的新账号没啥效果?
-        $stric = str_pad(dechex(trim($uid)), 8, 0, STR_PAD_LEFT);
-        $sc = '';
-        for ($i = 6; $i >= 0; $i -= 2) {
-            $sc .= substr($stric, $i, 2);
+        $ch = new wcurl('https://tiebac.baidu.com/c/r/friend/searchFriend', array(
+            'User-Agent: tieba/12.12.1.0'
+        ));
+        $temp = array(
+            'search_key' => $un
+        );
+        self::addTiebaSign($temp);
+        $re = $ch->post($temp);
+        $re = json_decode($re,true);
+        if($re['error_code'] == 0) {
+            return $re['user_info'][0];
         }
-        return $sc;
     }
+
     /*
      * 获取指定pid
      */
-    public static function getTieba($userid, $bduss, $pn)
+    public static function getTieba($bduss, $pn)
     {
 
         $head = array();
         $head[] = 'Content-Type: application/x-www-form-urlencoded';
-        $head[] = 'User-Agent: Mozilla/5.0 (SymbianOS/9.3; Series60/3.2 NokiaE72-1/021.021; Profile/MIDP-2.1 Configuration/CLDC-1.1 ) AppleWebKit/525 (KHTML, like Gecko) Version/3.0 BrowserNG/7.1.16352';
+        $head[] = 'User-Agent: tieba/12.29.7.0';
         $tl = new wcurl('http://c.tieba.baidu.com/c/f/forum/like', $head);
         $data = array(
-            'BDUSS' => $bduss,
-            'friend_uid' => $userid,
             'page_no' => $pn,
             'page_size' => 200,
         );
-        self::addTiebaSign($data, false);
+        self::addTiebaSign($data);
         $tl->addCookie(array('BDUSS' => $bduss));
         $tl->set(CURLOPT_RETURNTRANSFER, true);
         $rt = $tl->post($data);
@@ -568,32 +549,28 @@ class misc
         $table  = self::getTable($uid);
         $tb     = $m->fetch_array($m->query("SELECT count(id) AS `c` FROM `" . DB_NAME . "`.`" . DB_PREFIX . $table . "` WHERE `uid` = {$uid}"));
         $bduss  = $cma['bduss'];
-        $stoken = $cma['stoken'];
+        //$stoken = $cma['stoken'];
         $isvip  = self::isvip($uid);
         $pid    = $cma['id'];
-        //$bid    = self::getUserid($pid);
         $o      = option::get('tb_max');
         $pn     = 1;
         $a      = 0;
         while (true){
-            //if (empty($bid)) break;
-            $rc = self::getTieba2($bduss, $stoken, $pn);//fetch forum list //default 200 per page
+            $rc = self::getTieba($bduss, $pn);
             $rc = json_decode($rc,true);
-            if(!$rc) {break;}
-            $ngf = isset($rc["data"]["like_forum"]["list"]) ? $rc["data"]["like_forum"]["list"] : [];
+			$ngf    = $rc['forum_list']['non-gconforum'];
+			foreach ($rc['forum_list']['gconforum'] as $v) $ngf[] = $v;
             foreach ($ngf as $v){
                 if ($tb['c'] + $a >= $o && !empty($o) && !$isvip) break;
-                $vn  = addslashes(htmlspecialchars($v['forum_name']));
+                $vn  = addslashes(htmlspecialchars($v['name']));
                 $ist = $m->once_fetch_array("SELECT COUNT(id) AS `c` FROM `".DB_NAME."`.`".DB_PREFIX.$table."` WHERE `pid` = {$pid} AND `tieba` = '{$vn}';");
                 if ($ist['c'] == 0){
                     $a ++;
-                    $m->query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX.$table."` (`pid`,`fid`, `uid`, `tieba`) VALUES ({$pid},'{$v['forum_id']}', {$uid}, '{$vn}');");
+                    $m->query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX.$table."` (`pid`,`fid`, `uid`, `tieba`) VALUES ({$pid},'{$v['id']}', {$uid}, '{$vn}');");
                 }
             }
-            $pn++;
-            if ($pn > $rc["data"]["like_forum"]["page"]["total_page"]) {
-                break;
-            }
+			if ((count($ngf) < 1)) break;
+			$pn ++;
         }
     }
 

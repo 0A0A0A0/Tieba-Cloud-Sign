@@ -460,7 +460,9 @@ msg('<meta http-equiv="refresh" content="0; url=setting.php?mod=updatefid&step='
             doAction('baiduid_set_1');
             CleanUser(UID);
             $m->query("DELETE FROM `" . DB_NAME . "`.`" . DB_PREFIX . "baiduid` WHERE `" . DB_PREFIX . "baiduid`.`uid` = " . UID);
-        } elseif (!empty($_GET['bduss']) && !empty($_GET["stoken"])) {
+        } 
+        //暂时不强制绑定stoken
+        elseif (!empty($_GET['bduss'])) {
             if (option::get('bduss_num') == '-1' && ROLE != 'admin') {
                 msg('本站禁止绑定新账号');
             }
@@ -491,10 +493,11 @@ msg('<meta http-equiv="refresh" content="0; url=setting.php?mod=updatefid&step='
             doAction('baiduid_set_2');
             $checkSame = $m->once_fetch_array("SELECT * FROM `" . DB_NAME . "`.`" . DB_PREFIX . "baiduid` WHERE `portrait` = '{$baidu_name_portrait}'");
             if (option::get('same_pid') == '3' && !empty($checkSame)) {
-                $m->query("UPDATE `" . DB_NAME . "`.`" . DB_PREFIX . "baiduid` SET `bduss`='{$bduss}', `stoken`='{$stoken}' WHERE `id` = '{$checkSame["id"]}';");
+                $sql = "UPDATE `" . DB_NAME . "`.`" . DB_PREFIX . "baiduid` SET `bduss`='{$bduss}', `stoken`=" . ($stoken ? "'{$stoken}'" : "NULL") . " WHERE `id` = '{$checkSame["id"]}';";
             } else {
-                $m->query("INSERT INTO `" . DB_NAME . "`.`" . DB_PREFIX . "baiduid` (`id`,`uid`,`bduss`,`stoken`,`name`,`portrait`) VALUES  (NULL,'" . UID . "', '{$bduss}', '{$stoken}', '{$baidu_name}', '{$baidu_name_portrait}')");
+                $sql = "INSERT INTO `" . DB_NAME . "`.`" . DB_PREFIX . "baiduid` (`id`,`uid`,`bduss`,`stoken`,`name`,`portrait`) VALUES  (NULL,'" . UID . "', '{$bduss}', " . ($stoken ? "'{$stoken}'" : "NULL") . ", '{$baidu_name}', '{$baidu_name_portrait}')";
             }
+            $m->query($sql);
         } elseif (!empty($_GET['del'])) {
             $del = (int) $_GET['del'];
             doAction('baiduid_set_3');
@@ -580,14 +583,12 @@ msg('<meta http-equiv="refresh" content="0; url=setting.php?mod=updatefid&step='
         break;
     case 'set':
         // 获取头像的url
-        // 无法获取无id帐号头像, 不建议使用 *wontfix
-
         if ($i['post']['face_img'] == 1 && $i['post']['face_baiduid'] != '') {
-            $data = getUserInfo($i['post']['face_baiduid']);
-            $i['post']['face_url'] = "https://himg.bdimg.com/sys/portrait/item/{$data["data"]["portrait"]}";
-            if (empty($i['post']['face_url'])) {
+            $data = misc::searchFriend($i['post']['face_baiduid']);
+            if(!$data) {
                 msg('获取贴吧头像失败，可能是网络问题，请重试');
             }
+            $i['post']['face_url'] = "https://himg.bdimg.com/sys/portrait/item/{$data['portrait']}";
         }
         /*
         受信任的设置项，如果插件要使用系统的API去储存设置，必须通过set_save1或set_save2挂载点挂载设置名

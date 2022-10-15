@@ -56,7 +56,7 @@ define('SYSTEM_NAME', option::get('system_name'));
 //版本修订号
 define('SYSTEM_REV', option::get('core_revision'));
 //压缩包链接
-define('UPDATE_SERVER_GITHUB', 'https://github.com/MoeNetwork/Tieba-Cloud-Sign/archive/master.zip');
+define('UPDATE_SERVER_GITHUB', 'https://github.com/0A0A0A0/Tieba-Cloud-Sign/archive/master.zip');
 //压缩包内文件夹名
 define('UPDATE_FNAME_GITHUB', 'Tieba-Cloud-Sign-master');
 //压缩包解压路径

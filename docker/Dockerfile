@@ -31,7 +31,7 @@ RUN apk add --no-cache \
     && echo -e ":8080\nroot * $WORKDIR\nlog {\n    level warn\n}\nphp_fastcgi 127.0.0.1:9000\nfile_server" > /etc/caddy/Caddyfile \
     && rm -rf $WORKDIR/* /var/cache/apk/* /tmp/* \
     && git config --global pull.ff only \
-    && git clone --depth=1 -b master https://github.com/MoeNetwork/Tieba-Cloud-Sign $WORKDIR \
+    && git clone --depth=1 -b master https://github.com/0A0A0A0/Tieba-Cloud-Sign $WORKDIR \
     && mkdir /etc/cont-init.d \
     && mkdir /etc/services.d \
     && cp -r /var/www/docker/s6-overlay/etc/* /etc/
