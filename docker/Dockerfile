@@ -29,8 +29,7 @@ RUN apk update \
     && echo -e "${TZ}" > /etc/timezone \
     && rm -rf $WORKDIR/* /var/cache/apk/* /tmp/* \
     && git config --global pull.ff only \
-    && git clone --depth=1 -b master https://github.com/0A0A0A0/Tieba-Cloud-Sign $WORKDIR
-
-COPY ./overlay /
+    && git clone --depth=1 -b master https://github.com/0A0A0A0/Tieba-Cloud-Sign $WORKDIR \
+    && cp -r /var/www/docker/s6-overlay/etc/* /etc/
 
 ENTRYPOINT ["/init"]
